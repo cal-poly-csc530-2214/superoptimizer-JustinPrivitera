@@ -10,7 +10,7 @@ def get_nums():
 	return nums
 
 def format_binop(op, left, right):
-	return "\'(" + op + " " + left + " " + right + ")"
+	return "(" + op + " " + left + " " + right + ")"
 
 # binops of the form (-> num num num)
 def arith_binop():
@@ -74,7 +74,7 @@ def arith_binop_both():
 
 def print_nice(alist):
 	for item in alist:
-		print(item)
+		print("\'" + item, end = "\n")
 
 def get_all_programs():
 	return get_nums() + arith_binop() + arith_binop_left() + arith_binop_right() + arith_binop_both()
@@ -87,3 +87,5 @@ def get_all_programs():
 # print(len(arith_binop_left()))
 # print(len(arith_binop_right()))
 # print(len(arith_binop_both()))
+
+print_nice(get_all_programs())

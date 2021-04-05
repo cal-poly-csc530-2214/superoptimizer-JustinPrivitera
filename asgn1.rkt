@@ -84,6 +84,8 @@
          (interp then)
          (interp else))]))
 
+(provide (all-defined-out))
+
 (check-equal? (top-interp '(+ 2 3)) 5)
 (check-equal? (top-interp '(* 2 3)) 6)
 (check-equal? (top-interp '(<= 2 3)) #t)
