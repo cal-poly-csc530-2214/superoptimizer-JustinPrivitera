@@ -8,7 +8,7 @@
 
 ;; arguments later
 
-(define-type expr (U binopE ifE Natural Boolean))
+(define-type expr (U binopE ifE Natural Boolean Symbol))
 (struct binopE ([op : Symbol] [left : expr] [right : expr])#:transparent)
 (struct ifE ([cond : expr] [then : expr] [else : expr])#:transparent)
 
@@ -30,10 +30,10 @@
     ['and (lambda ([left : Value] [right : Value]) : Value (and left right))]
     ['or (lambda ([left : Value] [right : Value]) : Value (or left right))]))
 
-(define (top-interp [s : Sexp]) : Value
+(define (top-interp [s : Sexp] [arg : Natural]) : Value
   (define e (parse s))
   (type-check e)
-  (interp e))
+  (interp e arg))
 
 (define (parse [s : Sexp]) : expr
   (match s
@@ -46,6 +46,7 @@
       (parse right))]
     [(? natural? n) n]
     [(? boolean? b) b]
+    [(? symbol? s) s]
     [(list 'if cond then else)
      (ifE (parse cond) (parse then) (parse else))]))
 
@@ -53,6 +54,7 @@
   (match e
     [(? natural? n) (numT)]
     [(? boolean? b) (boolT)]
+    [(? symbol? s) (numT)] ;; for now args can only be numbers!!!
     [(binopE op left right)
      (if (member op (list '+ '*))
          (if (and (equal? (type-check left) (numT)) (equal? (type-check right) (numT)))
@@ -73,40 +75,43 @@
              (error 'type-check "expression failed to typecheck: ~a" e))
          (error 'type-check "expression failed to typecheck: ~a" e))]))
 
-(define (interp [e : expr]) : Value
+(define (interp [e : expr] [arg : Natural]) : Value
   (match e
     [(? natural? n) n]
     [(? boolean? b) b]
+    [(? symbol? s) arg]
     [(binopE op left right)
-     ((op-lookup op) (interp left) (interp right))]
+     ((op-lookup op) (interp left arg) (interp right arg))]
     [(ifE cond then else)
-     (if (interp cond)
-         (interp then)
-         (interp else))]))
+     (if (interp cond arg)
+         (interp then arg)
+         (interp else arg))]))
 
 (provide (all-defined-out))
 
-(check-equal? (top-interp '(+ 2 3)) 5)
-(check-equal? (top-interp '(* 2 3)) 6)
-(check-equal? (top-interp '(<= 2 3)) #t)
-(check-equal? (top-interp '(<= 3 3)) #t)
-(check-equal? (top-interp '(<= 4 3)) #f)
-(check-equal? (top-interp '(< 4 3)) #f)
-(check-equal? (top-interp '(> 4 3)) #t)
-(check-equal? (top-interp '(and (>= 1 1) (and (<= 1 1) (== 1 1)))) #t)
-(check-equal? (top-interp '(and #t #f)) #f)
-(check-equal? (top-interp '(if (and #t #f) 5 3)) 3)
-(check-equal? (top-interp '(if (or #t #f) 5 3)) 5)
-(check-equal? (top-interp '(if (or #f #t) 5 3)) 5)
+(check-equal? (top-interp '(+ 2 3) 0) 5)
+(check-equal? (top-interp '(* 2 3) 0) 6)
+(check-equal? (top-interp '(<= 2 3) 0) #t)
+(check-equal? (top-interp '(<= 3 3) 0) #t)
+(check-equal? (top-interp '(<= 4 3) 0) #f)
+(check-equal? (top-interp '(< 4 3) 0) #f)
+(check-equal? (top-interp '(> 4 3) 0) #t)
+(check-equal? (top-interp '(and (>= 1 1) (and (<= 1 1) (== 1 1))) 0) #t)
+(check-equal? (top-interp '(and #t #f) 0) #f)
+(check-equal? (top-interp '(if (and #t #f) 5 3) 0) 3)
+(check-equal? (top-interp '(if (or #t #f) 5 3) 0) 5)
+(check-equal? (top-interp '(if (or #f #t) 5 3) 0) 5)
+(check-equal? (top-interp '(+ 1 a) 2) 3)
+(check-equal? (top-interp '(and (>= 1 x) (and (<= 1 y) (== 1 z))) 2) #f)
 (check-exn (regexp (regexp-quote "bad operand in '^'"))
-           (lambda () (top-interp '(^ 2 3))))
+           (lambda () (top-interp '(^ 2 3) 0)))
 (check-exn (regexp (regexp-quote "expression failed to typecheck: #(struct:binopE + #t 3)"))
-           (lambda () (top-interp '(+ #t 3))))
+           (lambda () (top-interp '(+ #t 3) 0)))
 (check-exn (regexp (regexp-quote "expression failed to typecheck: #(struct:binopE and #t 3)"))
-           (lambda () (top-interp '(and #t 3))))
+           (lambda () (top-interp '(and #t 3) 0)))
 (check-exn (regexp (regexp-quote "expression failed to typecheck: #(struct:binopE <= #t 3)"))
-           (lambda () (top-interp '(<= #t 3))))
+           (lambda () (top-interp '(<= #t 3) 0)))
 (check-exn (regexp (regexp-quote "expression failed to typecheck: #(struct:ifE 3 5 3)"))
-           (lambda () (top-interp '(if 3 5 3))))
+           (lambda () (top-interp '(if 3 5 3) 0)))
 (check-exn (regexp (regexp-quote "expression failed to typecheck: #(struct:ifE #t #t 3)"))
-           (lambda () (top-interp '(if #t #t 3))))
+           (lambda () (top-interp '(if #t #t 3) 0)))
