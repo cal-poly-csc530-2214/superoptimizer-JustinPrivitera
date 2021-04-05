@@ -8,18 +8,28 @@
 (define lower-bound 0)
 (define upper-bound 3)
 (define nums (cast (range lower-bound upper-bound) (Listof Any)))
-(define symbols (list '+ '*))
+(define arith-symbols (list '+ '*))
+(define logic-symbols (list 'and 'or))
+(define bools (list #t #f))
 
 (define (arith-binops) : (Listof (Listof Any))
-  (cartesian-product symbols nums nums))
+  (cartesian-product arith-symbols nums nums))
+
+(define (logic-binops) : (Listof (Listof Any))
+  (cartesian-product logic-symbols bools bools))
 
 (define progs
   (append
    nums ;; numbers
    (arith-binops) ;; binops with numbers
-   (cartesian-product symbols (arith-binops) nums) ;; binops with a left binop with numbers
-   (cartesian-product symbols nums (arith-binops)) ;; binops with a right binop with numbers
-   (cartesian-product symbols (arith-binops) (arith-binops)))) ;; binops with two children
+   (cartesian-product arith-symbols (arith-binops) nums) ;; binops with a left binop with numbers
+   (cartesian-product arith-symbols nums (arith-binops)) ;; binops with a right binop with numbers
+   (cartesian-product arith-symbols (arith-binops) (arith-binops)) ;; binops with two children
+   bools
+   (logic-binops)
+   (cartesian-product logic-symbols (logic-binops) bools)
+   (cartesian-product logic-symbols bools (logic-binops))
+   (cartesian-product logic-symbols (logic-binops) (logic-binops))))
 
 (filter (lambda ([s : Any]) : Boolean
-          (works? (cast s Sexp) 6)) progs)
+          (works? (cast s Sexp) #t)) progs)
