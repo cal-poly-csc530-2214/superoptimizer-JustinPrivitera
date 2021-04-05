@@ -8,11 +8,11 @@
 
 ;; arguments later
 
-(define-type expr (U binopE ifE Natural Boolean Symbol))
+(define-type expr (U binopE ifE Integer Boolean Symbol))
 (struct binopE ([op : Symbol] [left : expr] [right : expr])#:transparent)
 (struct ifE ([cond : expr] [then : expr] [else : expr])#:transparent)
 
-(define-type Value (U Natural Boolean))
+(define-type Value (U Integer Boolean))
 
 (define-type type (U numT boolT))
 (struct numT ()#:transparent)
@@ -20,17 +20,17 @@
 
 (define (op-lookup [op : Symbol]) : (-> Value Value Value)
   (match op
-    ['+ (lambda ([left : Value] [right : Value]) : Value (+ (cast left Natural) (cast right Natural)))]
-    ['* (lambda ([left : Value] [right : Value]) : Value (* (cast left Natural) (cast right Natural)))]
-    ['< (lambda ([left : Value] [right : Value]) : Value (< (cast left Natural) (cast right Natural)))]
-    ['<= (lambda ([left : Value] [right : Value]) : Value (<= (cast left Natural) (cast right Natural)))]
-    ['> (lambda ([left : Value] [right : Value]) : Value (> (cast left Natural) (cast right Natural)))]
-    ['>= (lambda ([left : Value] [right : Value]) : Value (>= (cast left Natural) (cast right Natural)))]
+    ['+ (lambda ([left : Value] [right : Value]) : Value (+ (cast left Integer) (cast right Integer)))]
+    ['* (lambda ([left : Value] [right : Value]) : Value (* (cast left Integer) (cast right Integer)))]
+    ['< (lambda ([left : Value] [right : Value]) : Value (< (cast left Integer) (cast right Integer)))]
+    ['<= (lambda ([left : Value] [right : Value]) : Value (<= (cast left Integer) (cast right Integer)))]
+    ['> (lambda ([left : Value] [right : Value]) : Value (> (cast left Integer) (cast right Integer)))]
+    ['>= (lambda ([left : Value] [right : Value]) : Value (>= (cast left Integer) (cast right Integer)))]
     ['== equal?]
     ['and (lambda ([left : Value] [right : Value]) : Value (and left right))]
     ['or (lambda ([left : Value] [right : Value]) : Value (or left right))]))
 
-(define (top-interp [s : Sexp] [arg : Natural]) : Value
+(define (top-interp [s : Sexp] [arg : Integer]) : Value
   (define e (parse s))
   (type-check e)
   (interp e arg))
@@ -44,7 +44,7 @@
           (error 'parse "bad operand in '~a'" operand))
       (parse left)
       (parse right))]
-    [(? natural? n) n]
+    [(? integer? n) (cast n Integer)]
     [(? boolean? b) b]
     [(? symbol? s) s]
     [(list 'if cond then else)
@@ -52,7 +52,7 @@
 
 (define (type-check [e : expr]) : type
   (match e
-    [(? natural? n) (numT)]
+    [(? integer? n) (numT)]
     [(? boolean? b) (boolT)]
     [(? symbol? s) (numT)] ;; for now args can only be numbers!!!
     [(binopE op left right)
@@ -75,9 +75,9 @@
              (error 'type-check "expression failed to typecheck: ~a" e))
          (error 'type-check "expression failed to typecheck: ~a" e))]))
 
-(define (interp [e : expr] [arg : Natural]) : Value
+(define (interp [e : expr] [arg : Integer]) : Value
   (match e
-    [(? natural? n) n]
+    [(? integer? n) n]
     [(? boolean? b) b]
     [(? symbol? s) arg]
     [(binopE op left right)
