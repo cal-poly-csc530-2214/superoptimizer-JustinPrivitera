@@ -84,39 +84,6 @@
          (interp then)
          (interp else))]))
 
-(define num1 (box 0))
-(define num2 (box 0))
-(define arith-sym (box '+))
-
-(define (generate-natural [num : (Boxof Integer)]) : Natural
-  (define retval (unbox num))
-  (set-box! num (modulo (+ retval 1) 3))
-  (cast retval Natural))
-
-(define (generate-arith-sym [sym : (Boxof Symbol)]) : Symbol
-  (define retval (unbox sym))
-  (if (equal? retval '+)
-      (set-box! sym '*)
-      (set-box! sym '+))
-  retval)
-
-(define (generate-binop) : expr
-  (binop ))
-
-(define (synthesize-natural [target : Value]) : expr
-  (define prog (generate-natural num1))
-  (if (equal? (interp prog) target)
-      prog
-      (synthesize-natural target)))
-
-(define (synthesize-binop [target : Value]) : expr
-  (define prog (generate-natural num1))
-  (if (equal? (interp prog) target)
-      prog
-      (synthesize-binop target)))
-
-;(synthesize-natural 2)
-
 (check-equal? (top-interp '(+ 2 3)) 5)
 (check-equal? (top-interp '(* 2 3)) 6)
 (check-equal? (top-interp '(<= 2 3)) #t)
